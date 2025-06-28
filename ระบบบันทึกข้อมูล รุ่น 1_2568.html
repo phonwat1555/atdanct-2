@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบันทึกการเข้าเรียน - ปวช.ศูนย์ส่งเสริมการเรียนรู้อำเภอเมืองนครราชสีมา</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; }
+        .container { max-width: 1200px; margin: auto; padding: 1.5rem; }
+        .header-soft-gradient { background: linear-gradient(135deg, #a7b7ec 0%, #a48ad9 100%); }
+        .btn-primary { background-color: #6366f1; color: white; padding: 0.75rem 1.5rem; border-radius: 0.75rem; transition: background-color 0.3s ease, transform 0.2s ease; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+        .btn-primary:hover { background-color: #4f46e5; transform: translateY(-1px); }
+        .btn-primary:disabled { background-color: #a5b4fc; cursor: not-allowed; }
+        .btn-status { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; padding-top: 1rem; padding-bottom: 1rem; border-radius: 1rem; border-width: 2px; font-size: 1.1rem; font-weight: bold; transition: all 0.3s ease-in-out; background-color: white; }
+        .btn-status:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); color: white; }
+        .btn-status svg { width: 2.25rem; height: 2.25rem; margin-bottom: 0.75rem; transition: all 0.3s ease-in-out; }
+        .btn-status:hover svg { transform: scale(1.1); color: white; }
+        .status-present { border-color: #2ecc71; color: #2ecc71; }
+        .status-present:hover { background-color: #2ecc71; }
+        .status-late { border-color: #f1c40f; color: #f1c40f; }
+        .status-late:hover { background-color: #f1c40f; }
+        .status-absent { border-color: #e74c3c; color: #e74c3c; }
+        .status-absent:hover { background-color: #e74c3c; }
+        .status-leave { border-color: #3498db; color: #3498db; }
+        .status-leave:hover { background-color: #3498db; }
+        .card { background-color: white; border-radius: 1.25rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); border: 1px solid #e2e8f0; }
+        .input-field { padding: 0.75rem; border-radius: 0.5rem; border: 1px solid #d1d5db; width: 100%; font-size: 1rem; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+        .input-field:focus { outline: none; border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2); }
+        table { border-collapse: separate; border-spacing: 0; }
+        th, td { border-bottom: 1px solid #f1f5f9; padding: 0.75rem 1.5rem; }
+        th:first-child { border-top-left-radius: 0.75rem; }
+        th:last-child { border-top-right-radius: 0.75rem; }
+        tr:last-child td:first-child { border-bottom-left-radius: 0.75rem; }
+        tr:last-child td:last-child { border-bottom-right-radius: 0.75rem; }
+        @media (max-width: 768px) { .container { padding: 1rem; } }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <div id="mainContent" class="container flex-grow">
+        <header class="header-soft-gradient text-white p-6 rounded-xl shadow-md mb-8">
+            <h1 class="text-3xl font-bold text-center mb-2">ระบบบันทึกการเข้าเรียน รุ่น 1/2568 📚</h1>
+            <p class="text-lg text-center opacity-90">ปวช.ศูนย์ส่งเสริมการเรียนรู้อำเภอเมืองนครราชสีมา</p>
+        </header>
+
+        <main>
+            <div id="loginPage" class="card p-8 max-w-md mx-auto mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">เข้าสู่ระบบบันทึกข้อมูล 🔑</h2>
+                <div id="studentLoginSection" class="mb-8 p-4 border rounded-lg bg-indigo-50">
+                    <h3 class="text-xl font-bold text-gray-700 mb-4 text-center">สำหรับนักเรียน 🧑‍🎓</h3>
+                    <div class="mb-4">
+                        <label for="studentIdLoginInput" class="block text-gray-700 text-sm font-bold mb-2">กรอกรหัสนักศึกษา:</label>
+                        <input type="text" id="studentIdLoginInput" placeholder="ใส่รหัสนักศึกษาของคุณ" class="input-field">
+                    </div>
+                    <button id="studentLoginButton" class="btn-primary w-full">เข้าสู่ระบบ (นักศึกษา)</button>
+                </div>
+                <div id="teacherLoginToggle" class="text-center mt-6">
+                    <a href="#" id="showTeacherLoginLink" class="text-sm text-gray-600 hover:text-gray-900">เข้าสู่ระบบสำหรับคุณครู/เจ้าหน้าที่</a>
+                </div>
+                <div id="teacherLoginSection" class="mt-8 p-4 border rounded-lg bg-gray-50 hidden">
+                    <h3 class="text-xl font-bold text-gray-700 mb-4 text-center">สำหรับคุณครู 👨‍🏫</h3>
+                    <div class="mb-4">
+                        <label for="teacherUsernameInput" class="block text-gray-700 text-sm font-bold mb-2">รหัสผู้ใช้:</label>
+                        <input type="text" id="teacherUsernameInput" placeholder="รหัสผู้ใช้ครู" class="input-field">
+                    </div>
+                    <div id="teacherPasswordContainer" class="mb-6">
+                        <label for="teacherPasswordInput" class="block text-gray-700 text-sm font-bold mb-2">รหัสผ่าน:</label>
+                        <input type="password" id="teacherPasswordInput" placeholder="รหัสผ่านครู" class="input-field">
+                    </div>
+                    <button id="teacherLoginButton" class="btn-primary w-full">เข้าสู่ระบบ (เจ้าหน้าที่)</button>
+                </div>
+            </div>
+
+            <div id="homePage" class="card p-6 mb-8 hidden">
+                <div class="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
+                    <h2 class="text-2xl font-bold text-gray-800">Live moniter <span class="relative flex h-3 w-3 -top-1 -right-1 inline-flex"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span></span><span class="text-indigo-600">Real-time</span></h2>
+                    <div class="flex items-center gap-2">
+                         <label for="summaryDateInput" class="text-lg font-semibold text-gray-700 whitespace-nowrap">ข้อมูลวันที่:</label>
+                         <input type="date" id="summaryDateInput" class="input-field max-w-xs sm:w-auto flex-grow">
+                         <button id="logoutButtonTeacher" class="btn-primary flex items-center px-4 py-2 text-sm bg-red-500 hover:bg-red-600">ออกจากระบบ</button>
+                    </div>
+                </div>
+                
+                <div id="studentManagementSection">
+                    <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                        <input type="text" id="searchInput" placeholder="ค้นหาจากรหัสหรือชื่อ-สกุล" class="input-field flex-grow">
+                        <button id="searchButton" class="btn-primary w-full sm:w-auto">ค้นหา</button>
+                    </div>
+                    <div id="studentListContainer" class="max-h-[50vh] overflow-y-auto rounded-lg border border-gray-200">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50 sticky top-0">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รหัส</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อ-สกุล</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะวันนี้</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ดำเนินการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentsTableBody" class="bg-white divide-y divide-gray-200"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="mt-12 border-t pt-8">
+                    <div class="max-w-md mx-auto">
+                         <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">เครื่องมือ</h3>
+                         <div class="card p-4 flex flex-col gap-4">
+                            <button id="openLiveMonitorPopup" class="btn-primary w-full bg-red-600 hover:bg-red-700">เปิดหน้าต่าง Live Monitor</button>
+                            <button id="viewDailyRecordsButton" class="btn-primary w-full">ประวัติและจัดการข้อมูลรายวัน (ลิงก์ภายนอก)</button>
+                         </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="studentDetailPage" class="card p-6 hidden">
+                <!-- Student Detail Page content -->
+            </div>
+
+        </main>
+        <footer class="text-center py-6 text-gray-600 text-sm mt-8">
+            <p>ลิขสิทธิ์ &copy; 2025 นักพัฒนา : นายปัณณธร บุญเมธาภัทร</p>
+        </footer>
+    </div>
+    
+    <div id="liveMonitorPage" class="fixed inset-0 bg-gray-900 bg-opacity-50 backdrop-blur-sm p-4 sm:p-6 lg:p-8 hidden z-50">
+        <div class="bg-white rounded-2xl shadow-2xl h-full flex flex-col">
+            <header class="p-4 border-b flex justify-between items-center">
+                   <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
+                    <span class="relative flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-red-600"></span></span>
+                    Live Monitor
+                </h2>
+                   <button id="backToHomeFromMonitorButton" class="btn-primary bg-gray-600 hover:bg-gray-700">กลับหน้าหลัก</button>
+            </header>
+            <div id="fullScreenMonitorBody" class="flex-grow p-2 overflow-y-auto"></div>
+        </div>
+    </div>
+    
+    <script>
+        // --- DATA, STATE, and CONFIG ---
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx-a7doHlH3aPgo0jDat-3wkRaCOFla--wBvoSP6u1RqTEXRtMKJLDORY7utNQSrlUJRQ/exec';
+        
+        const students = [
+            { id: "68130491101", gender: "นางสาว", firstName: "นารีรัตน์", lastName: "ผลประกอบ" },
+            { id: "68130491102", gender: "นาย", firstName: "กฤษดา", lastName: "ผลอินทร์มะเริง" },
+            { id: "68130491103", gender: "นางสาว", firstName: "ธัญยรัตน์", lastName: "บวรแสนทวีสุข" },
+            { id: "68130491104", gender: "นาย", firstName: "ไชยวัฒน์", lastName: "สุรเตมีย์กุล" },
+            { id: "68130491105", gender: "นาย", firstName: "ธีธัช", lastName: "บุระมิ" },
+            { id: "68130491106", gender: "นางสาว", firstName: "สุพรรษา", lastName: "โฮมจูมจัง" },
+            { id: "68130491107", gender: "นางสาว", firstName: "ชนากานต์", lastName: "จิตรไธสง" },
+            { id: "68130491108", gender: "นางสาว", firstName: "กัลยารัตน์", lastName: "รุ่งเรืองฐิติเดช" },
+            { id: "68130491109", gender: "นางสาว", firstName: "พิมชนก", lastName: "เกี้ยวกลาง" },
+            { id: "68130491110", gender: "นางสาว", firstName: "อมรินทร์", lastName: "ตะนนท์" },
+            { id: "68130491111", gender: "นางสาว", firstName: "อาทิติยา", lastName: "วามะกัน" },
+            { id: "68130491112", gender: "นางสาว", firstName: "กฤษณวรรณ", lastName: "กริดกระโทก" },
+            { id: "68130491113", gender: "นางสาว", firstName: "พัณณ์พิชญา", lastName: "คีรินทร์พัชญ์" },
+            { id: "68130491114", gender: "นาย", firstName: "รวิภาส", lastName: "ทัศสมบูรณ์" },
+            { id: "68130491115", gender: "นางสาว", firstName: "สาวิตรา", lastName: "หาบจะบก" },
+            { id: "68130491116", gender: "นางสาว", firstName: "ภรภัทร", lastName: "สุทธิแพทย์" },
+            { id: "68130491117", gender: "นางสาว", firstName: "พิมพ์ชนก", lastName: "นามสง่า" },
+            { id: "68130491118", gender: "นางสาว", firstName: "สุชาวดี", lastName: "กุลจันทะ" },
+            { id: "68130491119", gender: "นางสาว", firstName: "รัฐฏาภรณ์", lastName: "แสงจันทร์ศรี" },
+            { id: "68130491120", gender: "นาย", firstName: "ชัยวัฒน์", lastName: "นิติสิทธ์" },
+            { id: "68130491121", gender: "นาย", firstName: "สมเพชร", lastName: "โสดา" },
+            { id: "68130491122", gender: "นาย", firstName: "ณัฐวุฒิ", lastName: "นาคกระโทก" },
+            { id: "68130491123", gender: "นาย", firstName: "อภิสิทธิ์", lastName: "ตรีผล" },
+            { id: "68130491124", gender: "นางสาว", firstName: "อัญชลี", lastName: "แพปรุ" },
+            { id: "68130491125", gender: "นาย", firstName: "พีระพัฒน์", lastName: "อาศัย" },
+            { id: "68130491126", gender: "นาย", firstName: "อรุช", lastName: "นันทพันธ์" },
+            { id: "68130491127", gender: "นางสาว", firstName: "ภัชดาภรณ์", lastName: "สัญจรโคกสูง" },
+            { id: "68130491128", gender: "นางสาว", firstName: "อนุสรา", lastName: "ผลุนกระโทก" },
+            { id: "68130491129", gender: "นางสาว", firstName: "ภูริชา", lastName: "แจ้งกิจจา" },
+            { id: "68130491130", gender: "นางสาว", firstName: "อมรภัทร", lastName: "การสมลาภ" },
+            { id: "68130491131", gender: "นางสาว", firstName: "ภักดี", lastName: "อริยเมธีกุล" },
+            { id: "68130491132", gender: "นาย", firstName: "สิทธิพล", lastName: "ดวงมาลา" },
+            { id: "68130491133", gender: "นาย", firstName: "นนทวัฒน์", lastName: "สุพานิชย์" },
+            { id: "68130491134", gender: "นาย", firstName: "ชนินทร์", lastName: "ตระกูลสง่ายิ่ง" },
+            { id: "68130491135", gender: "นางสาว", firstName: "กนกพร", lastName: "ยีรัมย์" },
+            { id: "68130491136", gender: "นางสาว", firstName: "ศรันรัตน์", lastName: "ชุดทะเล" },
+            { id: "68130491137", gender: "นาย", firstName: "อภิรักษ์", lastName: "ศรีอัศวิน" },
+            { id: "68130491138", gender: "นาย", firstName: "เชิดศักดิ์", lastName: "ปลีกกระโทก" },
+            { id: "68130491139", gender: "พระ", firstName: "วรเมศวร์", lastName: "ใจงูเหลือม" },
+            { id: "68130491140", gender: "นางสาว", firstName: "สุภาวดี", lastName: "เสรีพิทยารัตน์" },
+            { id: "68130491201", gender: "นางสาว", firstName: "วรรณษา", lastName: "คเชนทร์ชาติ" },
+            { id: "68130491202", gender: "นาย", firstName: "สิรภพ", lastName: "เชื่อดี" },
+            { id: "68130491203", gender: "นาย", firstName: "วรวิบูลย์", lastName: "คำทองอินทร์" },
+            { id: "68130491204", gender: "นางสาว", firstName: "นวพร", lastName: "งามพลกรัง" },
+            { id: "68130491205", gender: "นางสาว", firstName: "ลดาวรรณ", lastName: "สีเมือง" },
+            { id: "68130491206", gender: "นางสาว", firstName: "กัญญาวีร์", lastName: "ชุ่มชื่น" },
+            { id: "68130491207", gender: "นางสาว", firstName: "จิรฐากาญจน์", lastName: "อยุ่สวัสดิ์" },
+            { id: "68130491208", gender: "นาย", firstName: "รัฐศาสตร์", lastName: "สุวรรณสิงห์" },
+            { id: "68130491209", gender: "นางสาว", firstName: "จารุณี", lastName: "สังข์จันทึก" },
+            { id: "68130491210", gender: "นางสาว", firstName: "ธนาพร", lastName: "โอภาชาติ" },
+            { id: "68130491211", gender: "นางสาว", firstName: "สุกานดา", lastName: "รอดกลาง" },
+            { id: "68130491212", gender: "นาย", firstName: "นันทวัฒน์", lastName: "พรมรัศมี" },
+            { id: "68130491213", gender: "นางสาว", firstName: "จุฑาภรณ์", lastName: "สุดาบัน" },
+            { id: "68130491214", gender: "นาย", firstName: "เดชฤทธิชัย", lastName: "ศรีภิรมย์" },
+            { id: "68130491215", gender: "นาย", firstName: "นพกร", lastName: "ศรีสว่าง" },
+            { id: "68130491216", gender: "นางสาว", firstName: "ญาณิศา", lastName: "ทรงศิล" },
+            { id: "68130491217", gender: "นางสาว", firstName: "รัฐติยา", lastName: "กลางคาน" },
+            { id: "68130491218", gender: "นางสาว", firstName: "จีระนันท์", lastName: "โป่ยขุนทด" },
+            { id: "68130491219", gender: "นางสาว", firstName: "ศศิพร", lastName: "กอนไธสง" },
+            { id: "68130491220", gender: "นางสาว", firstName: "ปิยพัชร์", lastName: "มีบุญ" },
+            { id: "68130491221", gender: "นาย", firstName: "สิทธิชัย", lastName: "บุญมา" },
+            { id: "68130491222", gender: "นาย", firstName: "เมธาสิทธิ์", lastName: "พานปรุ" },
+            { id: "68130491223", gender: "นางสาว", firstName: "กาญจนา", lastName: "ม่วงพ่วง" },
+            { id: "68130491224", gender: "นางสาว", firstName: "น้ำอ้อย", lastName: "ช่วยไธสง" },
+            { id: "68130491225", gender: "นางสาว", firstName: "เกล็ดดาว", lastName: "สมานชัย" },
+            { id: "68130491226", gender: "นางสาว", firstName: "มาลี", lastName: "พูนปรุ" },
+            { id: "68130491227", gender: "นาย", firstName: "ประเสริฐ", lastName: "ศรีสา" },
+            { id: "68130491228", gender: "นาง", firstName: "บุญสิตา", lastName: "จันทร์พิลา" },
+            { id: "68130491229", gender: "นาย", firstName: "นันท์กร", lastName: "ปรุเขต" },
+            { id: "68130491230", gender: "นางสาว", firstName: "พิมพ์นารา", lastName: "ผลบุญ" },
+            { id: "68130491231", gender: "นางสาว", firstName: "รมิดา", lastName: "วงศ์สรจักร" },
+            { id: "68130491232", gender: "นางสาว", firstName: "ปภาดา", lastName: "วงศ์สรจักร" },
+            { id: "68130491233", gender: "นางสาว", firstName: "สุวนันท์", lastName: "งามขุนทด" },
+            { id: "68130491234", gender: "นางสาว", firstName: "อัยลดา", lastName: "ทิพสุวรรณ" },
+            { id: "68130491235", gender: "นางสาว", firstName: "พนิดา", lastName: "พรไพศาล" },
+            { id: "68130491236", gender: "นางสาว", firstName: "หยาดหยก", lastName: "ยาทองทิพย์" },
+            { id: "68130491237", gender: "นาย", firstName: "กีรติ", lastName: "คัดตะวงษ์" },
+            { id: "68130491238", gender: "นาย", firstName: "จิรัชญา", lastName: "กลึงกลางดอน" },
+            { id: "68130491239", gender: "นาง", firstName: "สมปอง", lastName: "ช่องงาม" },
+            { id: "68130491240", gender: "นางสาว", firstName: "สายทอง", lastName: "ไผ่ดอน" },
+            { id: "68130491301", gender: "นาย", firstName: "อาทิตย์", lastName: "แก้วอินทรชัย" },
+            { id: "68130491302", gender: "นาย", firstName: "อังกฤษ", lastName: "เพ็ชรนิล" },
+            { id: "68130491303", gender: "นางสาว", firstName: "มณีรัตน์", lastName: "ศิริเถียร" },
+            { id: "68130491304", gender: "นาง", firstName: "จุฬาลักษณ์", lastName: "ปราบงูเหลือม" },
+            { id: "68130491305", gender: "นาย", firstName: "รณกร", lastName: "เทพกลาง" },
+            { id: "68130491306", gender: "นาย", firstName: "วุฒิชัย", lastName: "บุขุนทด" },
+            { id: "68130491307", gender: "นางสาว", firstName: "อนุตตรีย์", lastName: "ยะปะพันธ์" },
+            { id: "68130491308", gender: "นาย", firstName: "ณัฐวุฒิ", lastName: "สลอดตะคุ" },
+            { id: "68130491309", gender: "นางสาว", firstName: "บัณฑิตา", lastName: "จิตรพิมาย" },
+            { id: "68130491310", gender: "นางสาว", firstName: "ศิราณี", lastName: "มั่งทองคำ" },
+            { id: "68130491311", gender: "นาย", firstName: "นฤเบศร์", lastName: "พิมพกันต์" },
+            { id: "68130491312", gender: "นางสาว", firstName: "หัสดี", lastName: "มะลิมุทวี" },
+            { id: "68130491313", gender: "นางสาว", firstName: "พรทิพา", lastName: "สิงหเสนีย์" },
+            { id: "68130491314", gender: "นาย", firstName: "กำโชค", lastName: "ทรงรัมย์" },
+            { id: "68130491315", gender: "นางสาว", firstName: "วาสนา", lastName: "อิทธิพัทธ์เมธี" },
+            { id: "68130491316", gender: "นาย", firstName: "ธีนการต์", lastName: "พรมสิงห์" }
+        ];
+
+        let currentStudent = null, attendanceData = [], currentUserRole = null, currentUserId = null;
+        let homePageIntervalId, liveMonitorIntervalId;
+        let lastMonitorRecordCount = 0;
+        const notificationSound = new Audio('https://cdn.jsdelivr.net/gh/orathan/pwa-line-notify/sound/ริ้ง.mp3');
+
+        const dom = {
+            loginPage: document.getElementById('loginPage'),
+            homePage: document.getElementById('homePage'),
+            studentDetailPage: document.getElementById('studentDetailPage'),
+            liveMonitorPage: document.getElementById('liveMonitorPage'),
+            mainContent: document.getElementById('mainContent'),
+            studentIdLoginInput: document.getElementById('studentIdLoginInput'),
+            studentLoginButton: document.getElementById('studentLoginButton'),
+            teacherUsernameInput: document.getElementById('teacherUsernameInput'),
+            teacherPasswordInput: document.getElementById('teacherPasswordInput'),
+            teacherLoginButton: document.getElementById('teacherLoginButton'),
+            summaryDateInput: document.getElementById('summaryDateInput'),
+            studentManagementSection: document.getElementById('studentManagementSection'),
+            searchInput: document.getElementById('searchInput'),
+            searchButton: document.getElementById('searchButton'),
+            studentsTableBody: document.getElementById('studentsTableBody'),
+            openLiveMonitorPopup: document.getElementById('openLiveMonitorPopup'),
+            backToHomeFromMonitorButton: document.getElementById('backToHomeFromMonitorButton'),
+            fullScreenMonitorBody: document.getElementById('fullScreenMonitorBody'),
+            viewDailyRecordsButton: document.getElementById('viewDailyRecordsButton'),
+            logoutButtonTeacher: document.getElementById('logoutButtonTeacher'),
+        };
+
+        // --- UTILS ---
+        const formatDate = (date) => {
+            const d = new Date(date);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        };
+        const formatDisplayDate = (date) => {
+            const d = new Date(date);
+            return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+        };
+        const getStatusDetails = (status) => {
+            switch (status) {
+                case 'มาเรียน': return { icon: '✅', badgeClass: 'bg-green-100 text-green-800' };
+                case 'มาสาย': return { icon: '⚠️', badgeClass: 'bg-yellow-100 text-yellow-800' };
+                case 'ขาดเรียน': return { icon: '❌', badgeClass: 'bg-red-100 text-red-800' };
+                case 'ลา': return { icon: '📝', badgeClass: 'bg-blue-100 text-blue-800' };
+                default: return { icon: '❓', badgeClass: 'bg-gray-100 text-gray-800' };
+            }
+        };
+        
+        // --- PAGE MANAGEMENT & NAVIGATION ---
+        const stopAllIntervals = () => {
+            if (homePageIntervalId) clearInterval(homePageIntervalId);
+            if (liveMonitorIntervalId) clearInterval(liveMonitorIntervalId);
+            homePageIntervalId = null; liveMonitorIntervalId = null;
+            console.log("All intervals stopped.");
+        };
+        
+        const showPage = (pageId) => {
+            stopAllIntervals();
+            ['loginPage', 'homePage', 'studentDetailPage', 'liveMonitorPage'].forEach(p => {
+                document.getElementById(p).classList.toggle('hidden', p !== pageId);
+            });
+            dom.mainContent.style.display = (pageId === 'liveMonitorPage') ? 'none' : 'block';
+        };
+
+        // --- AUTHENTICATION ---
+        const handleLogin = (role, id) => {
+            currentUserRole = role; currentUserId = id;
+            sessionStorage.setItem('currentUserRole', role);
+            sessionStorage.setItem('currentUserId', id);
+            if (role === 'teacher') {
+                showTeacherHomePage();
+                Swal.fire('เข้าสู่ระบบสำเร็จ!', 'ยินดีต้อนรับคุณครู ✅', 'success');
+            } else {
+                const student = students.find(s => s.id === id);
+                if(student) showStudentDetailPage(student); else handleLogout();
+            }
+        };
+        const handleLogout = () => {
+            currentUserRole = null; currentUserId = null;
+            sessionStorage.clear();
+            dom.studentIdLoginInput.value = '';
+            showPage('loginPage');
+            Swal.fire('ออกจากระบบ', 'คุณออกจากระบบเรียบร้อยแล้ว', 'info');
+        };
+
+        // --- PAGE RENDERING FUNCTIONS ---
+        function showTeacherHomePage() {
+            showPage('homePage');
+            loadAttendanceData(updateAllHomePageComponents);
+            homePageIntervalId = setInterval(() => {
+                console.log("Auto-refreshing Teacher Dashboard silently...");
+                loadAttendanceData(updateAllHomePageComponents, false);
+            }, 5000);
+        }
+
+        function showStudentDetailPage(student) {
+            stopAllIntervals();
+            currentStudent = student;
+            dom.studentDetailPage.innerHTML = `
+                <div class="flex justify-end items-center mb-6">
+                    <button id="logoutButtonStudent" class="btn-primary flex items-center px-4 py-2 text-sm bg-gray-500 hover:bg-gray-600">ออกจากระบบ</button>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 text-center">บันทึกการเข้าเรียน 📝</h2>
+                <div class="mb-6 bg-indigo-50 p-4 rounded-lg text-center">
+                    <p class="text-2xl text-gray-700"><span class="font-semibold">รหัส:</span> <span class="text-indigo-700 font-bold">${student.id}</span></p>
+                    <p class="text-2xl text-gray-700 mt-2"><span class="font-semibold">ชื่อ:</span> <span class="text-indigo-700 font-bold">${student.gender} ${student.firstName} ${student.lastName}</span></p>
+                </div>
+                <div class="mb-6 text-center">
+                    <p class="text-lg text-gray-600 mb-2">เลือกวันที่: <span id="currentDateDisplay" class="font-semibold text-gray-800"></span></p>
+                    <input type="date" id="attendanceDateInput" class="input-field max-w-xs mx-auto mb-4">
+                    <div class="grid grid-cols-2 gap-4 mt-6">
+                        <button class="btn-status status-present" data-status="มาเรียน"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg><span>มาเรียน</span></button>
+                        <button class="btn-status status-late" data-status="มาสาย"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" /></svg><span>มาสาย</span></button>
+                        <button class="btn-status status-absent" data-status="ขาดเรียน"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg><span>ขาดเรียน</span></button>
+                        <button class="btn-status status-leave" data-status="ลา"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" /></svg><span>ลา</span></button>
+                    </div>
+                </div>`;
+            showPage('studentDetailPage');
+            
+            const attendanceDateInput = document.getElementById('attendanceDateInput');
+            const currentDateDisplay = document.getElementById('currentDateDisplay');
+            const today = formatDate(new Date());
+            attendanceDateInput.value = today;
+            currentDateDisplay.textContent = formatDisplayDate(new Date());
+
+            document.getElementById('logoutButtonStudent').addEventListener('click', handleLogout);
+            
+            document.querySelectorAll('.btn-status').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const statusText = event.currentTarget.dataset.status;
+                    if (!currentStudent) return;
+                    saveAttendance(currentStudent.id, `${student.gender} ${student.firstName} ${student.lastName}`, document.getElementById('attendanceDateInput').value, statusText);
+                });
+            });
+        }
+
+        function showLiveMonitorPage() {
+            showPage('liveMonitorPage');
+            loadAttendanceData(() => {
+                const selectedDate = dom.summaryDateInput.value;
+                renderFullScreenMonitor(selectedDate);
+                lastMonitorRecordCount = attendanceData.filter(r => r.date === selectedDate).length;
+                liveMonitorIntervalId = setInterval(() => {
+                    loadAttendanceData(() => {
+                        renderFullScreenMonitor(selectedDate);
+                        const newRecordCount = attendanceData.filter(r => r.date === selectedDate).length;
+                        if (newRecordCount > lastMonitorRecordCount) {
+                            notificationSound.play().catch(e => console.error("Error playing sound:", e));
+                        }
+                        lastMonitorRecordCount = newRecordCount;
+                    }, false);
+                }, 5000);
+            });
+        }
+        
+        // --- COMPONENT RENDERING ---
+        function updateAllHomePageComponents() {
+            const selectedDate = dom.summaryDateInput.value;
+            displayStudentsForHomePage(students, selectedDate);
+        }
+        
+        function displayStudentsForHomePage(studentArray, selectedDate) {
+            dom.studentsTableBody.innerHTML = '';
+            studentArray.forEach(student => {
+                const studentStatusToday = attendanceData.find(r => r.studentId === student.id && r.date === selectedDate);
+                const statusText = studentStatusToday ? studentStatusToday.status : "ไม่บันทึกข้อมูล";
+                const { badgeClass } = getStatusDetails(statusText); 
+                const row = document.createElement('tr');
+                row.innerHTML = `<td class="px-6 py-4">${student.id}</td><td class="px-6 py-4">${student.gender} ${student.firstName} ${student.lastName}</td><td class="px-6 py-4"><span class="px-2 py-1 text-xs font-semibold rounded-full ${badgeClass}">${statusText}</span></td><td class="px-6 py-4"><button data-student-id="${student.id}" class="select-student-btn text-indigo-600 hover:text-indigo-900 font-semibold">เลือก</button></td>`;
+                dom.studentsTableBody.appendChild(row);
+            });
+            document.querySelectorAll('.select-student-btn').forEach(button => button.addEventListener('click', (event) => {
+                const student = students.find(s => s.id === event.target.dataset.studentId);
+                if (student) showStudentDetailPage(student);
+            }));
+        }
+        
+        function renderFullScreenMonitor(selectedDate) {
+            const recordsForDate = attendanceData.filter(r => r.date === selectedDate).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+            dom.fullScreenMonitorBody.innerHTML = '';
+            if(recordsForDate.length === 0) {
+                dom.fullScreenMonitorBody.innerHTML = `<div class="flex items-center justify-center h-full"><p class="text-gray-500 text-xl">ยังไม่มีนักเรียนบันทึกข้อมูล</p></div>`;
+                return;
+            }
+            const list = document.createElement('ul');
+            list.className = 'divide-y divide-gray-100';
+            recordsForDate.forEach(record => {
+                const statusDetails = getStatusDetails(record.status);
+                const listItem = document.createElement('li');
+                listItem.className = 'p-4 flex items-center justify-between hover:bg-gray-50 transition-colors duration-200';
+                listItem.innerHTML = `<div class="flex items-center"><span class="text-3xl mr-4">${statusDetails.icon}</span><div><p class="text-xl font-bold text-gray-800">${record.fullName}</p><p class="text-md text-gray-500">${new Date(record.timestamp).toLocaleTimeString('th-TH')}</p></div></div><span class="px-4 py-2 text-md font-bold rounded-full ${statusDetails.badgeClass}">${record.status}</span>`;
+                list.appendChild(listItem);
+            });
+            dom.fullScreenMonitorBody.appendChild(list);
+        }
+
+        // --- DATA FETCHING & SAVING (GAS) ---
+        function loadAttendanceData(callback = () => {}, showLoadingIndicator = true) {
+            if (showLoadingIndicator) Swal.fire({ title: 'กำลังโหลดข้อมูล...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+            const callbackName = 'gasResponseLoad_' + Date.now();
+            window[callbackName] = function(response) {
+                if (showLoadingIndicator) Swal.close();
+                if (response && response.data) {
+                    attendanceData = response.data.map(record => ({ ...record, date: formatDate(new Date(record.date)) }));
+                    callback();
+                } else if (showLoadingIndicator) {
+                    Swal.fire('ข้อผิดพลาด', 'ไม่สามารถโหลดข้อมูลได้: ' + (response.error || ''), 'error');
+                }
+                const scriptTag = document.getElementById('gasScript_' + callbackName);
+                if (scriptTag) scriptTag.remove();
+                delete window[callbackName];
+            };
+            const url = `${SCRIPT_URL}?action=get&callback=${callbackName}`;
+            const script = document.createElement('script');
+            script.src = url; script.id = 'gasScript_' + callbackName;
+            document.body.appendChild(script);
+        }
+        
+        function saveAttendance(studentId, fullName, date, status, isUpdate = false) {
+            Swal.fire({ title: 'กำลังบันทึก...', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+            const callbackName = 'gasResponseSave_' + Date.now();
+            let queryParams = new URLSearchParams({ action: isUpdate ? 'update' : 'add', studentId, fullName, date, status });
+            const url = `${SCRIPT_URL}?${queryParams.toString()}&callback=${callbackName}`;
+            
+            window[callbackName] = function(response) {
+                if (document.getElementById('gasScript_' + callbackName)) document.getElementById('gasScript_' + callbackName).remove();
+                delete window[callbackName];
+                if (response.result === 'success') {
+                    if(currentUserRole === 'student'){
+                        Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ', html: `<b>ชื่อ-สกุล:</b> ${fullName}<br><b>วันที่:</b> ${formatDisplayDate(date)}<br><b>สถานะ:</b> ${status}`, confirmButtonText: 'ตกลง' }).then(handleLogout);
+                    } else {
+                         Swal.fire('สำเร็จ!', 'บันทึกข้อมูลเรียบร้อย', 'success').then(() => {
+                           loadAttendanceData(updateAllHomePageComponents);
+                        });
+                    }
+                } else {
+                    Swal.fire('ข้อผิดพลาด!', response.error || 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+                }
+            };
+            const script = document.createElement('script');
+            script.src = url; script.id = 'gasScript_' + callbackName;
+            document.body.appendChild(script);
+        }
+        
+        // --- EVENT LISTENERS INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const storedUserRole = sessionStorage.getItem('currentUserRole');
+            const storedUserId = sessionStorage.getItem('currentUserId');
+            if (storedUserRole && storedUserId) handleLogin(storedUserRole, storedUserId);
+            else showPage('loginPage');
+
+            dom.summaryDateInput.value = formatDate(new Date());
+            
+            const showTeacherLoginLink = document.getElementById('showTeacherLoginLink');
+            const teacherLoginSection = document.getElementById('teacherLoginSection');
+            const teacherLoginToggle = document.getElementById('teacherLoginToggle');
+
+            showTeacherLoginLink.addEventListener('click', (event) => {
+                event.preventDefault(); 
+                teacherLoginSection.classList.remove('hidden'); 
+                teacherLoginToggle.classList.add('hidden');
+            });
+
+            dom.studentLoginButton.addEventListener('click', () => {
+                const student = students.find(s => s.id === dom.studentIdLoginInput.value.trim());
+                if (student) handleLogin('student', student.id);
+                else Swal.fire('เข้าสู่ระบบไม่สำเร็จ', 'ไม่พบรหัสนักศึกษา', 'error');
+            });
+            dom.studentIdLoginInput.addEventListener('keydown', e => e.key === 'Enter' && dom.studentLoginButton.click());
+            dom.teacherLoginButton.addEventListener('click', () => {
+                if(dom.teacherUsernameInput.value.trim() === 'teacher' && dom.teacherPasswordInput.value.trim() === 'password') {
+                    handleLogin('teacher', 'teacher');
+                } else {
+                    Swal.fire('เข้าสู่ระบบไม่สำเร็จ', 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', 'error');
+                }
+            });
+
+            dom.logoutButtonTeacher.addEventListener('click', handleLogout);
+            dom.openLiveMonitorPopup.addEventListener('click', showLiveMonitorPage);
+            dom.backToHomeFromMonitorButton.addEventListener('click', showTeacherHomePage);
+            
+            dom.viewDailyRecordsButton.addEventListener('click', () => {
+                window.open('https://script.google.com/macros/s/AKfycbyG14FWU32m84qZckqHcC66WPcipFWuhuJxQEXj4NAG6nLzbmQC_RZl9xNf_U1hHCtk/exec', '_blank');
+            });
+            
+            dom.summaryDateInput.addEventListener('change', () => loadAttendanceData(updateAllHomePageComponents));
+            
+            dom.searchButton.addEventListener('click', () => {
+                const query = dom.searchInput.value.toLowerCase();
+                const filtered = students.filter(s => s.id.includes(query) || `${s.firstName} ${s.lastName}`.toLowerCase().includes(query));
+                displayStudentsForHomePage(filtered, dom.summaryDateInput.value); 
+            });
+        });
+    </script>
+</body>
+</html>
